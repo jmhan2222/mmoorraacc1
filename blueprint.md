@@ -1,7 +1,8 @@
 # Project Blueprint: morrac x Flink | 티 타임 타임머신
 
 ## Overview
-A collaboration project between **morrac** and **Flink** featuring a "Tea Time Time Machine." This web application helps users perfectly brew different types of tea (Fresh Green Tea, Matcha, Aged Pu-erh Tea) with specialized timers and allows them to record their sensory experiences (flavor weight, preference, and memos) which are stored in Firebase Firestore.
+A collaboration project between **morrac** and **Flink** featuring a "Tea Time Time Machine."
+**Official Deployment**: [https://mmoorraacc1.pages.dev](https://mmoorraacc1.pages.dev)
 
 ## Project Details & Features
 
@@ -34,10 +35,10 @@ A collaboration project between **morrac** and **Flink** featuring a "Tea Time T
 - **Frontend**: HTML5, Vanilla JavaScript (ES Modules).
 - **Styling**: Tailwind CSS (v4 via CDN), Custom CSS.
 - **Backend**: Firebase Firestore.
-- **Deployment**: Firebase Hosting (intended).
+- **Deployment**: Cloudflare Pages (Primary), GitHub Pages (Backup).
 
 ## Current Implementation Plan
-1. **Modularize Code**: Separate the large single-file HTML into `index.html`, `style.css`, and `main.js`.
-2. **Setup Firebase Structure**: Ensure the Firebase initialization is clean and uses environment-friendly patterns.
-3. **Enhance UI/UX**: Add subtle textures and effects as suggested by `GEMINI.md`.
-4. **Validation**: Test the timer logic and the recording functionality.
+1. **Modularize Code**: (Completed) Separated concerns into index.html, style.css, main.js.
+2. **Setup Firebase Structure**: (Completed) Configured with project ID `mmoorraacc1`.
+3. **Enhance UI/UX**: (Completed) Added noise textures and multi-layered shadows.
+4. **Cloudflare Deployment**: (Completed) Connected GitHub repo to `mmoorraacc1.pages.dev`.
