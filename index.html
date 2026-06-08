@@ -1,14 +1,115 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>morrac x Flink | 티 타임 타임머신</title>
+    <!-- Tailwind CSS v4 via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+<body class="morrac-bg text-[#3A3530] min-h-screen flex flex-col antialiased">
+    <!-- 상단 헤더: 모락 x 플링크 콜라보 정체성 -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-[#EFECE6] px-6 py-5 sticky top-0 z-50 flex justify-between items-center">
+        <div>
+            <h1 class="text-[10px] tracking-[0.2em] text-[#A8A095] font-medium uppercase">morrac x Flink</h1>
+            <p class="text-base font-serif font-semibold text-[#2C3E2B] mt-0.5">티 타임 타임머신</p>
+        </div>
+        <span id="connection-status" class="text-[11px] bg-[#EBF2EA] text-[#3D663D] px-3 py-1 rounded-full font-medium">연결됨</span>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-1 max-w-md w-full mx-auto p-6 pb-28 space-y-6">
+        
+        <!-- 코스 안내 (타임라인) -->
+        <section class="bg-white rounded-2xl p-5 card-lifted border border-[#EFECE6] space-y-4">
+            <h2 class="text-xs tracking-wider text-[#A8A095] font-bold uppercase flex items-center gap-1.5">
+                <span>⏳</span> 시간의 흐름을 따르는 코스
+            </h2>
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="switchTea('fresh')" id="btn-fresh" class="tea-transition py-4 px-2 rounded-xl border-2 border-[#2C3E2B] bg-[#F4F7F4] text-[#2C3E2B] font-bold text-center flex flex-col items-center gap-1.5">
+                    <span class="text-lg">🌿</span>
+                    <span class="text-xs">햇 녹차</span>
+                </button>
+                <button onclick="switchTea('matcha')" id="btn-matcha" class="tea-transition py-4 px-2 rounded-xl border border-[#EFECE6] bg-white text-[#8A8073] font-medium text-center flex flex-col items-center gap-1.5">
+                    <span class="text-lg">🍵</span>
+                    <span class="text-xs">햇 말차</span>
+                </button>
+                <button onclick="switchTea('aged')" id="btn-aged" class="tea-transition py-4 px-2 rounded-xl border border-[#EFECE6] bg-white text-[#8A8073] font-medium text-center flex flex-col items-center gap-1.5">
+                    <span class="text-lg">🪵</span>
+                    <span class="text-xs">묵은 보이차</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 타이머 카드 -->
+        <section id="timer-card" class="tea-transition bg-[#3A483A] text-white rounded-3xl p-7 text-center shadow-lg space-y-5">
+            <div>
+                <span id="tea-badge" class="text-[10px] bg-white/15 text-white/90 px-3 py-0.5 rounded-full tracking-widest uppercase">Present</span>
+                <h3 id="timer-tea-title" class="text-xl font-serif font-bold mt-2.5">햇 녹차 우려내기</h3>
+                <p id="timer-guide" class="text-xs text-white/70 mt-1.5 h-8 flex items-center justify-center px-4">한 김 식힌 물을 붓고 가만히 기다려봅니다.</p>
+            </div>
+            
+            <div id="timer-display" class="text-5xl font-mono font-light tracking-tight py-4">02:00</div>
+            
+            <button onclick="toggleTimer()" id="btn-timer-control" class="w-full bg-white text-[#3A483A] py-3.5 rounded-xl font-bold text-sm shadow-sm active:scale-[0.98] transition-transform">
+                우려내기 시작
+            </button>
+        </section>
+
+        <!-- 오감 기록 노트 -->
+        <section class="bg-white rounded-2xl p-5 card-lifted border border-[#EFECE6] space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xs tracking-wider text-[#A8A095] font-bold uppercase flex items-center gap-1.5">
+                    <span>✍️</span> 오늘의 감각 기록
+                </h2>
+                <span class="text-[10px] text-[#A8A095]">Firebase 실시간 보관함</span>
+            </div>
+
+            <!-- 슬라이더 1 -->
+            <div class="space-y-2.5">
+                <div class="flex justify-between text-xs font-medium text-[#7A7065]">
+                    <span>🍃 파릇하고 가벼움</span>
+                    <span>🪵 묵직하고 깊음</span>
+                </div>
+                <input type="range" id="flavor-weight" min="1" max="5" value="3" class="w-full h-1 bg-[#EFECE6] rounded-lg appearance-none cursor-pointer accent-[#3A483A]">
+            </div>
+
+            <!-- 슬라이더 2 -->
+            <div class="space-y-2.5 pt-1">
+                <div class="flex justify-between text-xs font-medium text-[#7A7065]">
+                    <span>낯설고 어색해요</span>
+                    <span>내 취향이에요! ❤️</span>
+                </div>
+                <input type="range" id="flavor-preference" min="1" max="5" value="3" class="w-full h-1 bg-[#EFECE6] rounded-lg appearance-none cursor-pointer accent-[#3A483A]">
+            </div>
+
+            <!-- 메모 -->
+            <div class="space-y-2 pt-1">
+                <label class="text-xs font-bold text-[#6D655A]">지금 입안에 맴도는 단어 하나</label>
+                <input type="text" id="flavor-memo" placeholder="예: 비 온 뒤 풀냄새, 차분한 낙엽" class="w-full border border-[#EFECE6] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#3A483A] bg-[#FAF8F5]">
+            </div>
+
+            <button onclick="saveTastingNote()" class="w-full bg-[#5C534A] text-white py-4 rounded-xl font-bold text-sm active:scale-[0.98] transition-transform shadow-sm">
+                내 우주에 감각 기록 보내기
+            </button>
+        </section>
+    </main>
+
+    <!-- 하단 고정 트리거 바 -->
+    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-[#EFECE6] p-4 flex justify-around items-center z-50 rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+        <button onclick="alert('내일 아침 8시, 오늘 마신 차를 리마인드 해드릴게요!🎁')" class="flex flex-col items-center gap-1 text-[#3A483A]">
+            <span class="text-lg">🔔</span>
+            <span class="text-[10px] font-bold">내일 아침 알림</span>
+        </button>
+        <div class="h-5 w-px bg-[#EFECE6]"></div>
+        <button onclick="alert('내일 집에서 우려마실 때 이 앱을 켜고 타이머를 사용해보세요!')" class="flex flex-col items-center gap-1 text-[#8A8073]">
+            <span class="text-lg">🏠</span>
+            <span class="text-[10px] font-bold">내일 집에서 우릴 때</span>
+        </button>
+    </div>
+
+    <!-- Main JS logic (type="module" to support imports) -->
+    <script type="module" src="main.js"></script>
 </body>
 </html>
