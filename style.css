@@ -46,23 +46,24 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 20px;
   padding: 28px 20px;
   width: 100%;
   max-width: 420px;
+  min-height: 100svh;
   font-family: -apple-system, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
-/* 16:9 프레임 */
 .hg-frame {
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  width: min(88vw, 360px);
+  height: auto;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.hg-svg { height: 96%; width: auto; overflow: visible; }
+.hg-svg { width: 100%; height: auto; overflow: visible; }
 
 /* 숫자 표시 */
 .readout {
