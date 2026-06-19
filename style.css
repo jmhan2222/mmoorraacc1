@@ -1,19 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap');
 
+/* ── 색상 변수 ───────────────────────────────────────────────
+   페이지 배경 #FAF8F5 (따뜻한 크림화이트)와 어울리는 모래시계 색상.
+   sand-color: 같은 계열 따뜻한 베이지, 배경보다 충분히 진하게 구분.
+   glass-line: 기존 텍스트/헤더 색(어두운 갈녹색)과 통일.
+─────────────────────────────────────────────────────────── */
+:root {
+    --sand-color: #C5AE91;
+    --glass-line: #3A3530;
+}
+
 body {
     -webkit-tap-highlight-color: transparent;
     font-family: 'Noto Serif KR', serif;
     position: relative;
 }
 
-/* Subtle noise texture for a premium feel as per GEMINI.md */
+/* 미세 노이즈 텍스처 */
 body::before {
     content: "";
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     opacity: 0.03;
     z-index: 1000;
     pointer-events: none;
@@ -24,39 +32,54 @@ body::before {
     background-color: #FAF8F5;
 }
 
-.tea-transition {
-    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Custom range slider styling */
-input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    cursor: pointer;
-}
-
-input[type="range"]::-webkit-slider-runnable-track {
-    background: #EFECE6;
-    height: 4px;
-    border-radius: 2px;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    margin-top: -6px; /* Centers thumb on the track */
-    background-color: #3A483A;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(58, 72, 58, 0.3);
-}
-
-/* Multi-layered drop shadows for cards as per GEMINI.md */
 .card-lifted {
-    box-shadow: 
+    box-shadow:
         0 4px 6px -1px rgba(0, 0, 0, 0.05),
         0 10px 15px -3px rgba(0, 0, 0, 0.03),
         0 20px 25px -5px rgba(0, 0, 0, 0.02);
+}
+
+/* ── 16:9 모래시계 프레임 ──────────────────────────────────── */
+.hourglass-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background-color: #FAF8F5;
+}
+
+.hourglass-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hourglass-svg-el {
+    /* 16:9 프레임 높이의 88% 채움, 너비는 비율 자동 */
+    height: 88%;
+    width: auto;
+}
+
+/* ── 뒤집기 버튼 ──────────────────────────────────────────── */
+.flip-btn {
+    padding: 0.6rem 2.25rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    background-color: #3A3530;
+    color: white;
+    opacity: 0.28;
+    cursor: not-allowed;
+    transition: opacity 0.3s ease, transform 0.15s ease;
+    border: none;
+    outline: none;
+}
+
+.flip-btn--ready {
+    opacity: 1;
+    cursor: pointer;
+}
+
+.flip-btn--ready:active {
+    transform: scale(0.96);
 }
