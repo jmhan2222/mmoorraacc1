@@ -1,189 +1,261 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>morrac x Flink | 티 타임 타임머신</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>morrac x Flink | 티 타임 타임머신</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="morrac-bg text-[#3A3530] min-h-screen flex flex-col antialiased">
+<body class="morrac-bg min-h-screen flex flex-col antialiased">
 
-    <header class="bg-white/80 backdrop-blur-md border-b border-[#EFECE6] px-6 py-5 sticky top-0 z-50 flex items-center">
-        <div>
-            <h1 class="text-[10px] tracking-[0.2em] text-[#A8A095] font-medium uppercase">morrac x Flink</h1>
-            <p class="text-base font-serif font-semibold text-[#2C3E2B] mt-0.5">티 타임 타임머신</p>
-        </div>
-    </header>
+  <!-- 상단 헤더 -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-[#EFECE6] px-6 py-5 sticky top-0 z-50 flex items-center">
+    <div>
+      <h1 class="text-[10px] tracking-[0.2em] text-[#A8A095] font-medium uppercase">morrac x Flink</h1>
+      <p class="text-base font-serif font-semibold text-[#2C3E2B] mt-0.5">티 타임 타임머신</p>
+    </div>
+  </header>
 
-    <main class="flex-1 max-w-md w-full mx-auto p-6 flex flex-col justify-center">
+  <!-- 모래시계 위젯 -->
+  <main class="flex-1 flex items-center justify-center">
 
-        <div class="w-full bg-white rounded-3xl border border-[#EFECE6] card-lifted overflow-hidden">
+    <div class="widget" id="widget" data-state="running">
 
-            <!-- 16:9 모래시계 프레임 -->
-            <div class="hourglass-frame">
-                <div class="hourglass-inner">
-                    <!--
-                        SVG viewBox: 0 0 120 220
-                        Top chamber   : y=10 → y=107  (height=97)
-                        Neck          : y=107 → y=113
-                        Bottom chamber: y=113 → y=210  (height=97)
-                    -->
-                    <svg id="hourglass-svg"
-                         viewBox="0 0 120 220"
-                         xmlns="http://www.w3.org/2000/svg"
-                         class="hourglass-svg-el">
+      <div class="hg-frame">
+        <svg class="hg-svg" viewBox="0 0 260 430" xmlns="http://www.w3.org/2000/svg"
+             role="img" aria-label="3분 모래시계">
+          <defs>
+            <!-- 유리 바디 필 -->
+            <radialGradient id="glassFillTop" cx="40%" cy="30%" r="65%">
+              <stop offset="0%"   stop-color="#fff" stop-opacity=".22"/>
+              <stop offset="60%"  stop-color="#ddd" stop-opacity=".06"/>
+              <stop offset="100%" stop-color="#bbb" stop-opacity=".04"/>
+            </radialGradient>
+            <radialGradient id="glassFillBot" cx="40%" cy="60%" r="65%">
+              <stop offset="0%"   stop-color="#fff" stop-opacity=".20"/>
+              <stop offset="60%"  stop-color="#ddd" stop-opacity=".05"/>
+              <stop offset="100%" stop-color="#bbb" stop-opacity=".03"/>
+            </radialGradient>
 
-                        <defs>
-                            <!-- 위 챔버 클립 -->
-                            <clipPath id="clip-top">
-                                <polygon points="10,10 110,10 65,107 55,107"/>
-                            </clipPath>
-                            <!-- 아래 챔버 클립 -->
-                            <clipPath id="clip-bottom">
-                                <polygon points="55,113 65,113 110,210 10,210"/>
-                            </clipPath>
-                        </defs>
+            <!-- 유리 왼쪽 하이라이트 반사 -->
+            <linearGradient id="glassHL" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#fff" stop-opacity=".55"/>
+              <stop offset="18%"  stop-color="#fff" stop-opacity=".12"/>
+              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
 
-                        <!-- 아래 모래 (바닥에서 쌓임) -->
-                        <rect id="sand-bottom"
-                              x="0" y="210" width="120" height="0"
-                              clip-path="url(#clip-bottom)"
-                              fill="var(--sand-color)"/>
+            <!-- 모래 그라디언트 -->
+            <linearGradient id="sandGradTop" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stop-color="#D9C9AE"/>
+              <stop offset="100%" stop-color="#C4AD8F"/>
+            </linearGradient>
+            <linearGradient id="sandGradBot" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stop-color="#C8B591"/>
+              <stop offset="100%" stop-color="#BBA07A"/>
+            </linearGradient>
 
-                        <!-- 위 모래 (처음에 가득) -->
-                        <rect id="sand-top"
-                              x="0" y="10" width="120" height="97"
-                              clip-path="url(#clip-top)"
-                              fill="var(--sand-color)"/>
+            <!-- 캡 그라디언트 -->
+            <linearGradient id="capGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stop-color="#8A7560"/>
+              <stop offset="100%" stop-color="#5C4D3A"/>
+            </linearGradient>
 
-                        <!-- 모래 흐름 (목 부분) -->
-                        <rect id="sand-stream"
-                              x="57" y="107" width="6" height="6"
-                              fill="var(--sand-color)" opacity="1"/>
+            <!-- 유리 테두리 stroke -->
+            <linearGradient id="glassStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#A09080" stop-opacity=".9"/>
+              <stop offset="50%"  stop-color="#C8BAA8" stop-opacity=".5"/>
+              <stop offset="100%" stop-color="#A09080" stop-opacity=".8"/>
+            </linearGradient>
 
-                        <!-- 유리 테두리: 위 챔버 -->
-                        <line x1="10"  y1="10"  x2="110" y2="10"  stroke="var(--glass-line)" stroke-width="1.5" stroke-linecap="round"/>
-                        <line x1="10"  y1="10"  x2="55"  y2="107" stroke="var(--glass-line)" stroke-width="1.5" stroke-linecap="round"/>
-                        <line x1="110" y1="10"  x2="65"  y2="107" stroke="var(--glass-line)" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- 모래 클립 경로 -->
+            <clipPath id="clipTop">
+              <path d="M53,52 Q53,52 130,52 Q207,52 207,52
+                       Q190,120 145,185 Q138,196 130,200
+                       Q122,196 115,185 Q70,120 53,52 Z"/>
+            </clipPath>
+            <clipPath id="clipBot">
+              <path d="M115,230 Q122,224 130,220 Q138,224 145,230
+                       Q170,120 207,378 Q130,378 53,378
+                       Q90,290 115,230 Z"/>
+            </clipPath>
+            <clipPath id="clipNeck">
+              <rect x="120" y="200" width="20" height="28"/>
+            </clipPath>
 
-                        <!-- 목 -->
-                        <line x1="55" y1="107" x2="55" y2="113" stroke="var(--glass-line)" stroke-width="1.5"/>
-                        <line x1="65" y1="107" x2="65" y2="113" stroke="var(--glass-line)" stroke-width="1.5"/>
+            <!-- 모래 표면 광택 -->
+            <linearGradient id="sandSurfaceTop" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%"   stop-color="#E8D9BC" stop-opacity=".9"/>
+              <stop offset="30%"  stop-color="#D9C9AE" stop-opacity=".7"/>
+              <stop offset="100%" stop-color="#C4AD8F" stop-opacity="1"/>
+            </linearGradient>
+            <linearGradient id="sandSurfaceBot" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%"   stop-color="#BBA07A"/>
+              <stop offset="40%"  stop-color="#C8B591"/>
+              <stop offset="100%" stop-color="#DDD0B0" stop-opacity=".85"/>
+            </linearGradient>
 
-                        <!-- 유리 테두리: 아래 챔버 -->
-                        <line x1="55"  y1="113" x2="10"  y2="210" stroke="var(--glass-line)" stroke-width="1.5" stroke-linecap="round"/>
-                        <line x1="65"  y1="113" x2="110" y2="210" stroke="var(--glass-line)" stroke-width="1.5" stroke-linecap="round"/>
-                        <line x1="10"  y1="210" x2="110" y2="210" stroke="var(--glass-line)" stroke-width="1.5" stroke-linecap="round"/>
+            <filter id="sandBlur">
+              <feGaussianBlur stdDeviation=".6"/>
+            </filter>
+          </defs>
 
-                        <!--
-                            1분 30초(90초, 50%) 표시점
-                            위 챔버 50% 높이 y=58.5:
-                              왼쪽 벽 x = 10 + 45*(48.5/97) ≈ 32.5
-                              오른쪽 벽 x = 110 − 22.5 ≈ 87.5
-                            아래 챔버 50% 높이 y=161.5:
-                              같은 x 좌표 대칭
-                        -->
-                        <circle cx="33"  cy="58"  r="2.2" fill="var(--glass-line)" opacity="0.32"/>
-                        <circle cx="87"  cy="58"  r="2.2" fill="var(--glass-line)" opacity="0.32"/>
-                        <circle cx="33"  cy="162" r="2.2" fill="var(--glass-line)" opacity="0.32"/>
-                        <circle cx="87"  cy="162" r="2.2" fill="var(--glass-line)" opacity="0.32"/>
+          <!-- ══ 회전 루트 (뒤집기 시 전체가 돌아감) ══ -->
+          <g id="glassRoot">
 
-                    </svg>
-                </div>
-            </div>
+            <!-- 위쪽 유리 바디 -->
+            <!-- #FAF8F5: 페이지 배경(morrac-bg)과 동일 → 유리 내부가 배경에 자연스럽게 녹아들음 -->
+            <path id="topBody"
+              d="M53,52 Q53,52 130,52 Q207,52 207,52
+                 Q185,115 147,182 Q140,194 130,200
+                 Q120,194 113,182 Q75,115 53,52 Z"
+              fill="#FAF8F5" fill-opacity=".92"/>
+            <path
+              d="M53,52 Q53,52 130,52 Q207,52 207,52
+                 Q185,115 147,182 Q140,194 130,200
+                 Q120,194 113,182 Q75,115 53,52 Z"
+              fill="url(#glassFillTop)"/>
 
-            <!-- 타이머 표시 + 뒤집기 버튼 -->
-            <div class="px-6 py-5 flex flex-col items-center gap-4 bg-white">
-                <p id="timer-display" class="text-3xl font-mono font-light tracking-widest text-[#3A3530]">3:00</p>
-                <button id="flip-btn" disabled class="flip-btn">뒤집기</button>
-            </div>
+            <!-- 위쪽 모래 -->
+            <rect id="topSand"
+              x="40" y="52" width="180" height="148"
+              fill="url(#sandGradTop)"
+              clip-path="url(#clipTop)"
+              filter="url(#sandBlur)"/>
+            <rect id="topSandHL"
+              x="40" y="52" width="180" height="6"
+              fill="url(#sandSurfaceTop)"
+              clip-path="url(#clipTop)"
+              opacity=".7"/>
 
-        </div>
-    </main>
+            <!-- 위쪽 유리 테두리 (모래 위에 그려 덮음) -->
+            <path
+              d="M53,52 Q53,52 130,52 Q207,52 207,52
+                 Q185,115 147,182 Q140,194 130,200
+                 Q120,194 113,182 Q75,115 53,52 Z"
+              fill="url(#glassHL)" opacity=".8"/>
+            <path
+              d="M53,52 Q53,52 130,52 Q207,52 207,52
+                 Q185,115 147,182 Q140,194 130,200
+                 Q120,194 113,182 Q75,115 53,52 Z"
+              fill="none"
+              stroke="url(#glassStroke)" stroke-width="2.2"
+              stroke-linejoin="round"/>
 
-    <script>
-        const TOTAL = 180;
-        let timeLeft = TOTAL;
-        let timerInterval = null;
-        let flipping = false;
+            <!-- 목(neck) -->
+            <rect x="113" y="200" width="34" height="28" fill="#FAF8F5" rx="2"/>
+            <rect x="118" y="200" width="24" height="28"
+                  fill="none" stroke="url(#glassStroke)" stroke-width="1.8" rx="1"/>
+            <rect x="119" y="200" width="5"  height="28"
+                  fill="#fff" fill-opacity=".2" rx="1"/>
 
-        const sandTop    = document.getElementById('sand-top');
-        const sandBottom = document.getElementById('sand-bottom');
-        const sandStream = document.getElementById('sand-stream');
-        const timerDisp  = document.getElementById('timer-display');
-        const flipBtn    = document.getElementById('flip-btn');
-        const svg        = document.getElementById('hourglass-svg');
+            <!-- 아래쪽 유리 바디 -->
+            <path id="botBody"
+              d="M113,228 Q121,222 130,220 Q139,222 147,228
+                 Q170,290 207,378 Q130,378 53,378
+                 Q90,290 113,228 Z"
+              fill="#FAF8F5" fill-opacity=".92"/>
+            <path
+              d="M113,228 Q121,222 130,220 Q139,222 147,228
+                 Q170,290 207,378 Q130,378 53,378
+                 Q90,290 113,228 Z"
+              fill="url(#glassFillBot)"/>
 
-        /* 모래 위치/크기와 타이머 텍스트를 ratio에 따라 갱신 */
-        function renderSand() {
-            const ratio = timeLeft / TOTAL; // 1.0 = 위 가득, 0.0 = 위 비어있음
+            <!-- 아래쪽 모래 -->
+            <rect id="botSand"
+              x="40" y="378" width="180" height="0"
+              fill="url(#sandGradBot)"
+              clip-path="url(#clipBot)"
+              filter="url(#sandBlur)"/>
+            <rect id="botSandHL"
+              x="40" y="370" width="180" height="6"
+              fill="url(#sandSurfaceBot)"
+              clip-path="url(#clipBot)"
+              opacity=".65"/>
 
-            // 위 챔버 (y=10 ~ y=107, 높이=97)
-            const topH = 97 * ratio;
-            sandTop.setAttribute('y',      String(10 + 97 * (1 - ratio)));
-            sandTop.setAttribute('height', String(topH));
+            <!-- 아래쪽 유리 테두리 -->
+            <path
+              d="M113,228 Q121,222 130,220 Q139,222 147,228
+                 Q170,290 207,378 Q130,378 53,378
+                 Q90,290 113,228 Z"
+              fill="url(#glassHL)" opacity=".7"/>
+            <path
+              d="M113,228 Q121,222 130,220 Q139,222 147,228
+                 Q170,290 207,378 Q130,378 53,378
+                 Q90,290 113,228 Z"
+              fill="none"
+              stroke="url(#glassStroke)" stroke-width="2.2"
+              stroke-linejoin="round"/>
 
-            // 아래 챔버 (y=113 ~ y=210, 높이=97)
-            const botH = 97 * (1 - ratio);
-            sandBottom.setAttribute('y',      String(210 - botH));
-            sandBottom.setAttribute('height', String(botH));
+            <!-- 유리 반사 하이라이트 -->
+            <path d="M66,80 Q60,130 72,175"
+              fill="none" stroke="#fff" stroke-width="4"
+              stroke-linecap="round" opacity=".3"/>
+            <path d="M68,255 Q58,305 68,355"
+              fill="none" stroke="#fff" stroke-width="4"
+              stroke-linecap="round" opacity=".25"/>
 
-            // 모래 흐름
-            sandStream.setAttribute('opacity', (timeLeft > 0 && !flipping) ? '1' : '0');
+            <!-- 1분 30초(50%) 표시점 -->
+            <circle cx="79"  cy="126" r="2.8" fill="#B96A4A" opacity=".8"/>
+            <circle cx="181" cy="126" r="2.8" fill="#B96A4A" opacity=".8"/>
+            <circle cx="79"  cy="303" r="2.8" fill="#B96A4A" opacity=".8"/>
+            <circle cx="181" cy="303" r="2.8" fill="#B96A4A" opacity=".8"/>
 
-            // 타이머 텍스트
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            timerDisp.textContent = m + ':' + String(s).padStart(2, '0');
+            <!-- 떨어지는 모래 흐름 -->
+            <g clip-path="url(#clipNeck)">
+              <ellipse class="grain" cx="130" cy="204" rx="2.2" ry="2.8"
+                fill="#C8B591" style="--dur:.38s;--drop:20px;animation-delay:0s"/>
+              <ellipse class="grain" cx="129" cy="202" rx="1.6" ry="2.2"
+                fill="#DACC9F" style="--dur:.42s;--drop:22px;animation-delay:.12s"/>
+              <ellipse class="grain" cx="131" cy="205" rx="1.4" ry="1.8"
+                fill="#BBA07A" style="--dur:.36s;--drop:19px;animation-delay:.24s"/>
+            </g>
 
-            // 뒤집기 버튼 활성화 (타이머 0일 때만)
-            if (timeLeft === 0 && !flipping) {
-                flipBtn.disabled = false;
-                flipBtn.classList.add('flip-btn--ready');
-            }
-        }
+            <!-- 목 아래 퍼지는 먼지 입자 -->
+            <circle class="dust" cx="130" cy="228" r="1.2" fill="#C8B591"
+              style="--ddur:.55s;--ddelay:.05s;--dx:-4px;--dy:14px"/>
+            <circle class="dust" cx="130" cy="228" r="1.0" fill="#D9C8A0"
+              style="--ddur:.6s;--ddelay:.18s;--dx:5px;--dy:12px"/>
+            <circle class="dust" cx="130" cy="228" r=".9"  fill="#BBA07A"
+              style="--ddur:.5s;--ddelay:.32s;--dx:-6px;--dy:16px"/>
+            <circle class="dust" cx="130" cy="228" r=".8"  fill="#C4AF88"
+              style="--ddur:.65s;--ddelay:.08s;--dx:7px;--dy:10px"/>
+            <circle class="dust" cx="130" cy="228" r="1.1" fill="#D0BF9A"
+              style="--ddur:.48s;--ddelay:.41s;--dx:-2px;--dy:18px"/>
+            <circle class="dust" cx="130" cy="228" r=".7"  fill="#BBA07A"
+              style="--ddur:.57s;--ddelay:.55s;--dx:3px;--dy:15px"/>
 
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    renderSand();
-                } else {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    renderSand();
-                }
-            }, 1000);
-        }
+            <!-- 위쪽 캡 -->
+            <rect x="38" y="36" width="184" height="18" rx="9" fill="url(#capGrad)"/>
+            <rect x="42" y="37" width="80"  height="6"  rx="3" fill="#fff" fill-opacity=".18"/>
 
-        flipBtn.addEventListener('click', () => {
-            if (timeLeft !== 0 || flipping) return;
+            <!-- 아래쪽 캡 -->
+            <rect x="38" y="376" width="184" height="18" rx="9" fill="url(#capGrad)"/>
+            <rect x="42" y="377" width="80"  height="6"  rx="3" fill="#fff" fill-opacity=".18"/>
 
-            flipping = true;
-            flipBtn.disabled = true;
-            flipBtn.classList.remove('flip-btn--ready');
-            sandStream.setAttribute('opacity', '0');
+            <!-- 좌우 기둥 -->
+            <rect x="36"  y="52" width="8" height="328" rx="4" fill="url(#capGrad)"/>
+            <rect x="216" y="52" width="8" height="328" rx="4" fill="url(#capGrad)"/>
+            <rect x="37"  y="60" width="3" height="310" rx="1.5" fill="#fff" fill-opacity=".18"/>
+            <rect x="217" y="60" width="3" height="310" rx="1.5" fill="#fff" fill-opacity=".18"/>
 
-            /* 360° 회전 애니메이션 */
-            svg.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
-            svg.style.transform  = 'rotate(360deg)';
+          </g><!-- /glassRoot -->
+        </svg>
+      </div>
 
-            setTimeout(() => {
-                svg.style.transition = 'none';
-                svg.style.transform  = 'none';
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div class="readout" id="readout">03:00</div>
+        <button class="flip-btn" id="flipBtn" aria-label="모래시계 뒤집기" onclick="doFlip()">
+          <svg viewBox="0 0 24 24">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+            <polyline points="21 3 21 9 15 9"/>
+          </svg>
+        </button>
+      </div>
 
-                timeLeft = TOTAL;
-                flipping = false;
-                renderSand();
-                startTimer();
-            }, 1200);
-        });
+    </div><!-- /widget -->
+  </main>
 
-        /* 페이지 로드 즉시 시작 */
-        renderSand();
-        startTimer();
-    </script>
+  <script src="main.js" defer></script>
 </body>
 </html>
