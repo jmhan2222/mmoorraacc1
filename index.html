@@ -1,261 +1,441 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>morrac x Flink | 티 타임 타임머신</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <link rel="stylesheet" href="style.css"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>mmoorraacc — 모락모락 모래시계</title>
+<style>
+:root{ --bg:#EEEAE4; --ink:#3A332A; --sub:#9A8E82; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  height:100svh;overflow:hidden;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:var(--bg);
+  font-family:-apple-system,"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+}
+
+/* ── 모래시계 화면 ── */
+#mainScreen{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  transition:opacity .6s ease;
+}
+.hg-wrap{width:min(58vw,196px);flex-shrink:0;}
+.hg-wrap svg{width:100%;height:auto;display:block;overflow:visible;}
+.controls{display:flex;flex-direction:column;align-items:center;gap:9px;margin-top:16px;}
+.readout{font-size:16px;letter-spacing:.14em;font-variant-numeric:tabular-nums;
+  color:var(--ink);opacity:.50;}
+.flip-btn{
+  width:44px;height:44px;border-radius:50%;
+  border:1.5px solid rgba(120,100,80,.20);
+  background:rgba(255,255,255,.50);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.06);
+  transition:transform .14s;
+}
+.flip-btn:active{transform:scale(.9);}
+.flip-btn svg{width:18px;height:18px;stroke:#8A7560;stroke-width:2;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── 완료 화면 ── */
+#doneScreen{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);
+  opacity:0;pointer-events:none;
+  transition:opacity .9s ease;
+  z-index:100;gap:0;
+}
+#doneScreen.active{opacity:1;pointer-events:auto;}
+.done-svg{width:min(72vw,260px);height:auto;display:block;}
+.done-text{text-align:center;margin-top:18px;}
+.done-title{font-size:15px;font-weight:600;letter-spacing:.12em;color:var(--ink);}
+.done-sub{font-size:11px;letter-spacing:.10em;color:var(--sub);margin-top:6px;}
+.restart-btn{
+  margin-top:20px;width:44px;height:44px;border-radius:50%;
+  border:1.5px solid rgba(120,100,80,.22);
+  background:rgba(255,255,255,.55);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.06);
+  transition:transform .14s;
+}
+.restart-btn:active{transform:scale(.9);}
+.restart-btn svg{width:18px;height:18px;stroke:#8A7560;stroke-width:2;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── 모락모락 연기 ── */
+.wisp{
+  opacity:0;
+  animation:wispUp var(--wd,2.8s) ease-in-out var(--wdl,0s) infinite;
+}
+@keyframes wispUp{
+  0%  {transform:translateY(8px);opacity:0;}
+  18% {opacity:.72;}
+  78% {opacity:.38;}
+  100%{transform:translateY(-18px);opacity:0;}
+}
+
+/* ── 모래시계 회전 ── */
+#hgRoot{transform-box:fill-box;transform-origin:50% 50%;}
+#hgRoot.spin{animation:hgspin .8s cubic-bezier(.45,0,.55,1) forwards;}
+@keyframes hgspin{0%{transform:rotate(0deg);}100%{transform:rotate(180deg);}}
+
+/* ── 모래 입자 ── */
+.gn{animation:gnfall var(--gd,.38s) linear var(--gdelay,0s) infinite;opacity:0;}
+@keyframes gnfall{
+  0%  {opacity:0;transform:translate(var(--gx0,0px),0) scale(1.1);}
+  6%  {opacity:.90;}88%{opacity:.72;}
+  100%{opacity:0;transform:translate(var(--gx1,0px),var(--gy,20px)) scale(.45);}
+}
+.gs{animation:gsfall var(--sd,.48s) ease-in var(--sdelay,0s) infinite;opacity:0;}
+@keyframes gsfall{
+  0%{opacity:0;transform:translate(0,0);}10%{opacity:.80;}
+  100%{opacity:0;transform:translate(var(--sx,0px),var(--sy,22px));}
+}
+[data-state=done] .gn,[data-state=done] .gs{animation-play-state:paused;opacity:0;}
+@media(prefers-reduced-motion:reduce){
+  .gn,.gs,.wisp{animation:none!important;opacity:0!important;}
+  #hgRoot.spin{animation:none!important;}
+}
+</style>
 </head>
-<body class="morrac-bg min-h-screen flex flex-col antialiased">
+<body>
 
-  <!-- 상단 헤더 -->
-  <header class="bg-white/80 backdrop-blur-md border-b border-[#EFECE6] px-6 py-5 sticky top-0 z-50 flex items-center">
-    <div>
-      <h1 class="text-[10px] tracking-[0.2em] text-[#A8A095] font-medium uppercase">morrac x Flink</h1>
-      <p class="text-base font-serif font-semibold text-[#2C3E2B] mt-0.5">티 타임 타임머신</p>
-    </div>
-  </header>
+<!-- ═══════════════ 모래시계 화면 ═══════════════ -->
+<div id="mainScreen">
+  <div class="hg-wrap" id="widget" data-state="running">
+  <svg viewBox="0 0 240 520" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="cTop">
+      <path d="M 120,26 C 198,26 226,88 226,148 C 226,206 176,244 128,254
+               L 112,254 C 64,244 14,206 14,148 C 14,88 42,26 120,26 Z"/>
+    </clipPath>
+    <clipPath id="cBot">
+      <path d="M 112,266 L 128,266 C 176,276 226,314 226,372
+               C 226,448 180,494 120,494 C 60,494 14,448 14,372
+               C 14,314 64,276 112,266 Z"/>
+    </clipPath>
+    <clipPath id="cNeck">
+      <rect x="109" y="250" width="22" height="18"/>
+    </clipPath>
+    <clipPath id="cSpread">
+      <path d="M 112,266 L 128,266 C 176,276 226,314 226,372
+               C 226,448 180,494 120,494 C 60,494 14,448 14,372
+               C 14,314 64,276 112,266 Z"/>
+    </clipPath>
+    <linearGradient id="gSandT" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#E4D4B6"/><stop offset="100%" stop-color="#CAB692"/>
+    </linearGradient>
+    <linearGradient id="gSandB" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#D2BE9A"/><stop offset="100%" stop-color="#BCA27E"/>
+    </linearGradient>
+    <linearGradient id="gSurfT" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#EEE2C8" stop-opacity=".92"/>
+      <stop offset="100%" stop-color="#E4D4B6" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gGlass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#D0E8F4" stop-opacity=".16"/>
+      <stop offset="22%"  stop-color="#EAF2FA" stop-opacity=".07"/>
+      <stop offset="100%" stop-color="#fff"    stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gEdge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#AABCCC" stop-opacity=".88"/>
+      <stop offset="35%"  stop-color="#C8C0B4" stop-opacity=".50"/>
+      <stop offset="100%" stop-color="#B0A898" stop-opacity=".38"/>
+    </linearGradient>
+    <filter id="fBlur"><feGaussianBlur stdDeviation=".7"/></filter>
+    <filter id="fGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g id="hgRoot">
+    <path d="M 120,26 C 198,26 226,88 226,148 C 226,206 176,244 128,254
+             L 112,254 C 64,244 14,206 14,148 C 14,88 42,26 120,26 Z"
+      fill="#EEEAE4" fill-opacity=".95"/>
+    <rect id="topSand" x="4" y="26" width="232" height="228"
+      fill="url(#gSandT)" clip-path="url(#cTop)" filter="url(#fBlur)"/>
+    <rect id="topSandHL" x="4" y="26" width="232" height="14"
+      fill="url(#gSurfT)" clip-path="url(#cTop)" opacity=".85"/>
+    <path d="M 120,26 C 198,26 226,88 226,148 C 226,206 176,244 128,254
+             L 112,254 C 64,244 14,206 14,148 C 14,88 42,26 120,26 Z"
+      fill="url(#gGlass)"/>
+    <path d="M 120,26 C 198,26 226,88 226,148 C 226,206 176,244 128,254
+             L 112,254 C 64,244 14,206 14,148 C 14,88 42,26 120,26 Z"
+      fill="none" stroke="url(#gEdge)" stroke-width="2.1" stroke-linejoin="round"/>
+    <path d="M 40,64 Q 24,130 38,194" fill="none" stroke="#C8E0F0" stroke-width="5"
+      stroke-linecap="round" opacity=".36" filter="url(#fGlow)"/>
+    <path d="M 202,72 Q 218,138 202,202" fill="none" stroke="#9AAABB" stroke-width="1.8"
+      stroke-linecap="round" opacity=".25"/>
+    <ellipse cx="74" cy="54" rx="13" ry="8" fill="#fff" fill-opacity=".20"
+      transform="rotate(-28,74,54)"/>
+    <circle cx="120" cy="140" r="2.6" fill="#C07858" opacity=".62"/>
+    <rect x="112" y="254" width="16" height="12" fill="#EEEAE4" fill-opacity=".98"/>
+    <line x1="112" y1="254" x2="112" y2="266" stroke="#AABCCC" stroke-width="1.6" stroke-opacity=".65"/>
+    <line x1="128" y1="254" x2="128" y2="266" stroke="#9AAABB" stroke-width="1.4" stroke-opacity=".40"/>
+    <rect x="113" y="255" width="4" height="10" rx="2" fill="#C8E0F0" fill-opacity=".20"/>
+    <g id="grainGroup" clip-path="url(#cNeck)">
+      <ellipse class="gn" cx="120" cy="252" rx="2.2" ry="3.0" fill="#CCBA96"
+        style="--gd:.36s;--gdelay:0s;   --gx0:0px; --gx1:0px; --gy:18px"/>
+      <ellipse class="gn" cx="119" cy="251" rx="1.8" ry="2.4" fill="#DDD0A8"
+        style="--gd:.41s;--gdelay:.06s; --gx0:0px; --gx1:0px; --gy:20px"/>
+      <ellipse class="gn" cx="121" cy="253" rx="1.4" ry="2.0" fill="#C4AC84"
+        style="--gd:.34s;--gdelay:.13s; --gx0:0px; --gx1:0px; --gy:17px"/>
+      <circle class="gn" cx="117" cy="252" r="1.4" fill="#D4C298"
+        style="--gd:.44s;--gdelay:.20s; --gx0:-1px;--gx1:-2px;--gy:19px"/>
+      <circle class="gn" cx="123" cy="252" r="1.2" fill="#E0CC9E"
+        style="--gd:.38s;--gdelay:.28s; --gx0:1px; --gx1:2px; --gy:18px"/>
+      <circle class="gn" cx="118" cy="250" r="1.0" fill="#C8B48A"
+        style="--gd:.46s;--gdelay:.35s; --gx0:-1px;--gx1:-1px;--gy:21px"/>
+      <circle class="gn" cx="122" cy="254" r="1.0" fill="#D8C89C"
+        style="--gd:.40s;--gdelay:.42s; --gx0:1px; --gx1:2px; --gy:16px"/>
+      <circle class="gn" cx="116" cy="253" r=".8"  fill="#CCBE90"
+        style="--gd:.50s;--gdelay:.09s; --gx0:-2px;--gx1:-2px;--gy:22px"/>
+      <circle class="gn" cx="124" cy="251" r=".8"  fill="#DDD0A0"
+        style="--gd:.43s;--gdelay:.17s; --gx0:2px; --gx1:2px; --gy:19px"/>
+      <circle class="gn" cx="120" cy="255" r=".7"  fill="#C0AE88"
+        style="--gd:.37s;--gdelay:.50s; --gx0:0px; --gx1:1px; --gy:15px"/>
+      <circle class="gn" cx="115" cy="251" r=".7"  fill="#D2C49A"
+        style="--gd:.48s;--gdelay:.32s; --gx0:-2px;--gx1:-3px;--gy:20px"/>
+      <circle class="gn" cx="125" cy="253" r=".6"  fill="#CAB88C"
+        style="--gd:.42s;--gdelay:.56s; --gx0:2px; --gx1:3px; --gy:18px"/>
+    </g>
+    <g id="spreadGroup" clip-path="url(#cSpread)">
+      <circle class="gs" cx="120" cy="268" r="1.3" fill="#CCBA96"
+        style="--sd:.50s;--sdelay:.04s;--sx:-9px; --sy:20px"/>
+      <circle class="gs" cx="120" cy="268" r="1.1" fill="#DDD0A8"
+        style="--sd:.44s;--sdelay:.14s;--sx:10px; --sy:18px"/>
+      <circle class="gs" cx="120" cy="268" r="1.0" fill="#C4AC84"
+        style="--sd:.56s;--sdelay:.24s;--sx:-13px;--sy:25px"/>
+      <circle class="gs" cx="120" cy="268" r=".9"  fill="#D4C296"
+        style="--sd:.48s;--sdelay:.38s;--sx:14px; --sy:22px"/>
+      <circle class="gs" cx="120" cy="268" r=".8"  fill="#E0CC9C"
+        style="--sd:.52s;--sdelay:.08s;--sx:-6px; --sy:28px"/>
+      <circle class="gs" cx="120" cy="268" r=".8"  fill="#C8B48A"
+        style="--sd:.46s;--sdelay:.46s;--sx:7px;  --sy:24px"/>
+    </g>
+    <path d="M 112,266 L 128,266 C 176,276 226,314 226,372
+             C 226,448 180,494 120,494 C 60,494 14,448 14,372
+             C 14,314 64,276 112,266 Z"
+      fill="#EEEAE4" fill-opacity=".95"/>
+    <rect id="botSand" x="4" y="494" width="232" height="0"
+      fill="url(#gSandB)" clip-path="url(#cBot)" filter="url(#fBlur)"/>
+    <rect id="botSandHL" x="4" y="486" width="232" height="12"
+      fill="url(#gSurfT)" clip-path="url(#cBot)" opacity=".50"/>
+    <path d="M 112,266 L 128,266 C 176,276 226,314 226,372
+             C 226,448 180,494 120,494 C 60,494 14,448 14,372
+             C 14,314 64,276 112,266 Z" fill="url(#gGlass)"/>
+    <path d="M 112,266 L 128,266 C 176,276 226,314 226,372
+             C 226,448 180,494 120,494 C 60,494 14,448 14,372
+             C 14,314 64,276 112,266 Z"
+      fill="none" stroke="url(#gEdge)" stroke-width="2.1" stroke-linejoin="round"/>
+    <path d="M 36,296 Q 22,372 36,448" fill="none" stroke="#C8E0F0" stroke-width="5"
+      stroke-linecap="round" opacity=".32" filter="url(#fGlow)"/>
+    <path d="M 204,308 Q 220,376 204,450" fill="none" stroke="#9AAABB" stroke-width="1.8"
+      stroke-linecap="round" opacity=".22"/>
+    <circle cx="120" cy="380" r="2.6" fill="#C07858" opacity=".62"/>
+  </g>
+  <!-- 로고 텍스트 (회전 안 됨) -->
+  <g style="pointer-events:none;">
+    <rect x="68" y="246" width="104" height="30" rx="4" fill="#EEEAE4" fill-opacity=".55"/>
+    <text x="120" y="259" text-anchor="middle" dominant-baseline="middle"
+      font-family="-apple-system,'Pretendard','Apple SD Gothic Neo',sans-serif"
+      font-size="13.5" font-weight="600" letter-spacing="2.8"
+      fill="#3A332A" fill-opacity=".82">mmoorraacc</text>
+    <text x="120" y="271" text-anchor="middle" dominant-baseline="middle"
+      font-family="-apple-system,'Pretendard','Apple SD Gothic Neo',sans-serif"
+      font-size="6.2" letter-spacing="2.0"
+      fill="#3A332A" fill-opacity=".52">모락모락 모래시계</text>
+  </g>
+  </svg>
+  </div>
+  <div class="controls">
+    <div class="readout" id="readout">03:00</div>
+    <button class="flip-btn" onclick="doFlip()" aria-label="모래시계 뒤집기">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+        <polyline points="21 3 21 9 15 9"/></svg>
+    </button>
+  </div>
+</div>
 
-  <!-- 모래시계 위젯 -->
-  <main class="flex-1 flex items-center justify-center">
+<!-- ═══════════════ 완료 화면 ═══════════════ -->
+<div id="doneScreen">
+  <svg class="done-svg" viewBox="0 0 280 260" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 주물 요철 패턴 -->
+    <pattern id="bumps" x="0" y="0" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="4.5" cy="4.5" r="1.7" fill="rgba(0,0,0,0.38)"/>
+    </pattern>
+    <!-- 주전자 바디 하이라이트 -->
+    <radialGradient id="gPotHL" cx="30%" cy="28%" r="55%">
+      <stop offset="0%"   stop-color="#6A7888" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#2C3545" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
 
-    <div class="widget" id="widget" data-state="running">
+  <!-- ── 모락모락 연기 (스팟 위) ── -->
+  <path class="wisp" style="--wd:3.0s;--wdl:0s"
+    d="M 44,138 C 36,118 52,100 42,82 C 32,64 48,46 38,28"
+    fill="none" stroke="#3A332A" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".68"/>
+  <path class="wisp" style="--wd:2.8s;--wdl:0.9s"
+    d="M 62,133 C 74,113 58,95 70,77 C 82,59 66,41 78,23"
+    fill="none" stroke="#3A332A" stroke-width="2.0" stroke-linecap="round" stroke-opacity=".60"/>
+  <path class="wisp" style="--wd:3.2s;--wdl:1.8s"
+    d="M 80,140 C 88,120 72,102 82,84 C 92,66 76,48 86,30"
+    fill="none" stroke="#3A332A" stroke-width="1.8" stroke-linecap="round" stroke-opacity=".52"/>
+  <!-- 잔 위 작은 연기 -->
+  <path class="wisp" style="--wd:2.6s;--wdl:0.5s"
+    d="M 228,152 C 223,138 230,126 224,114"
+    fill="none" stroke="#3A332A" stroke-width="1.5" stroke-linecap="round" stroke-opacity=".45"/>
+  <path class="wisp" style="--wd:2.9s;--wdl:1.3s"
+    d="M 238,154 C 244,140 236,128 242,116"
+    fill="none" stroke="#3A332A" stroke-width="1.3" stroke-linecap="round" stroke-opacity=".38"/>
 
-      <div class="hg-frame">
-        <svg class="hg-svg" viewBox="0 0 260 430" xmlns="http://www.w3.org/2000/svg"
-             role="img" aria-label="3분 모래시계">
-          <defs>
-            <!-- 유리 바디 필 -->
-            <radialGradient id="glassFillTop" cx="40%" cy="30%" r="65%">
-              <stop offset="0%"   stop-color="#fff" stop-opacity=".22"/>
-              <stop offset="60%"  stop-color="#ddd" stop-opacity=".06"/>
-              <stop offset="100%" stop-color="#bbb" stop-opacity=".04"/>
-            </radialGradient>
-            <radialGradient id="glassFillBot" cx="40%" cy="60%" r="65%">
-              <stop offset="0%"   stop-color="#fff" stop-opacity=".20"/>
-              <stop offset="60%"  stop-color="#ddd" stop-opacity=".05"/>
-              <stop offset="100%" stop-color="#bbb" stop-opacity=".03"/>
-            </radialGradient>
+  <!-- ── 주전자 ── -->
+  <!-- 손잡이 (바디보다 뒤에 그려짐) -->
+  <path d="M 128,110 C 192,68 228,96 224,168 C 222,182 215,190 206,186"
+    fill="none" stroke="#1C2530" stroke-width="20" stroke-linecap="round"/>
+  <path d="M 128,110 C 192,68 228,96 224,168 C 222,182 215,190 206,186"
+    fill="none" stroke="#36424F" stroke-width="9" stroke-linecap="round"/>
 
-            <!-- 유리 왼쪽 하이라이트 반사 -->
-            <linearGradient id="glassHL" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stop-color="#fff" stop-opacity=".55"/>
-              <stop offset="18%"  stop-color="#fff" stop-opacity=".12"/>
-              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-            </linearGradient>
+  <!-- 바디 메인 -->
+  <ellipse cx="118" cy="180" rx="86" ry="64" fill="#28333F"/>
+  <!-- 요철 패턴 -->
+  <ellipse cx="118" cy="180" rx="86" ry="64" fill="url(#bumps)"/>
+  <!-- 상단 하이라이트 -->
+  <ellipse cx="118" cy="180" rx="86" ry="64" fill="url(#gPotHL)"/>
 
-            <!-- 모래 그라디언트 -->
-            <linearGradient id="sandGradTop" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%"   stop-color="#D9C9AE"/>
-              <stop offset="100%" stop-color="#C4AD8F"/>
-            </linearGradient>
-            <linearGradient id="sandGradBot" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%"   stop-color="#C8B591"/>
-              <stop offset="100%" stop-color="#BBA07A"/>
-            </linearGradient>
+  <!-- 주둥이(spout) -->
+  <path d="M 36,170 C 22,152 20,132 28,120"
+    fill="none" stroke="#1C2530" stroke-width="20" stroke-linecap="round"/>
+  <path d="M 42,170 C 28,152 26,132 34,120"
+    fill="none" stroke="#28333F" stroke-width="11" stroke-linecap="round"/>
+  <!-- 주둥이 하이라이트 -->
+  <path d="M 37,162 C 27,148 26,136 32,126"
+    fill="none" stroke="#36424F" stroke-width="5" stroke-linecap="round" opacity=".7"/>
 
-            <!-- 캡 그라디언트 -->
-            <linearGradient id="capGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%"   stop-color="#8A7560"/>
-              <stop offset="100%" stop-color="#5C4D3A"/>
-            </linearGradient>
+  <!-- 뚜껑 베이스 -->
+  <ellipse cx="118" cy="117" rx="40" ry="11" fill="#1E2B38"/>
+  <!-- 동심원 무늬 (남부철기 특징) -->
+  <ellipse cx="118" cy="115" rx="36" ry="8" fill="none" stroke="#151F2A" stroke-width="2"/>
+  <ellipse cx="118" cy="114" rx="27" ry="6" fill="none" stroke="#151F2A" stroke-width="1.5"/>
+  <ellipse cx="118" cy="113" rx="17" ry="4" fill="none" stroke="#151F2A" stroke-width="1.2"/>
+  <!-- 뚜껑 돔 -->
+  <path d="M 78,117 C 78,95 158,95 158,117" fill="#28333F"/>
+  <path d="M 78,117 C 78,95 158,95 158,117" fill="url(#bumps)"/>
+  <!-- 손잡이 노브 -->
+  <rect x="112" y="84" width="12" height="18" rx="6" fill="#1E2B38"/>
+  <ellipse cx="118" cy="83" rx="8" ry="5" fill="#36424F"/>
+  <ellipse cx="118" cy="81" rx="5" ry="3" fill="#4A5568" fill-opacity=".7"/>
 
-            <!-- 유리 테두리 stroke -->
-            <linearGradient id="glassStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stop-color="#A09080" stop-opacity=".9"/>
-              <stop offset="50%"  stop-color="#C8BAA8" stop-opacity=".5"/>
-              <stop offset="100%" stop-color="#A09080" stop-opacity=".8"/>
-            </linearGradient>
+  <!-- ── 찻잔 ── -->
+  <!-- 잔 바디 -->
+  <path d="M 208,160 L 204,205 L 256,205 L 252,160 Z"
+    fill="#28333F" rx="3"/>
+  <path d="M 208,160 L 204,205 L 256,205 L 252,160 Z"
+    fill="url(#bumps)"/>
+  <!-- 잔 손잡이 -->
+  <path d="M 256,170 C 272,170 272,194 256,194"
+    fill="none" stroke="#1C2530" stroke-width="9" stroke-linecap="round"/>
+  <path d="M 256,170 C 272,170 272,194 256,194"
+    fill="none" stroke="#38444F" stroke-width="4" stroke-linecap="round"/>
+  <!-- 잔 윗면 -->
+  <ellipse cx="230" cy="160" rx="26" ry="7" fill="#323F4E"/>
+  <!-- 차 수면 -->
+  <ellipse cx="230" cy="159" rx="21" ry="5.5" fill="#6B4423" fill-opacity=".62"/>
+  <!-- 잔 하이라이트 -->
+  <rect x="210" y="165" width="6" height="34" rx="3"
+    fill="#fff" fill-opacity=".08"/>
 
-            <!-- 모래 클립 경로 — topBody/botBody path와 동일 -->
-            <clipPath id="clipTop">
-              <path d="M53,52 Q53,52 130,52 Q207,52 207,52
-                       Q185,115 147,182 Q140,194 130,200
-                       Q120,194 113,182 Q75,115 53,52 Z"/>
-            </clipPath>
-            <clipPath id="clipBot">
-              <path d="M113,228 Q121,222 130,220 Q139,222 147,228
-                       Q170,290 207,378 Q130,378 53,378
-                       Q90,290 113,228 Z"/>
-            </clipPath>
-            <clipPath id="clipNeck">
-              <rect x="120" y="200" width="20" height="28"/>
-            </clipPath>
+  <!-- ── 받침대 (그림자) ── -->
+  <ellipse cx="118" cy="248" rx="90" ry="8" fill="rgba(0,0,0,0.06)"/>
+  <ellipse cx="230" cy="210" rx="30" ry="4" fill="rgba(0,0,0,0.05)"/>
+  </svg>
 
-            <!-- 모래 표면 광택 -->
-            <linearGradient id="sandSurfaceTop" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%"   stop-color="#E8D9BC" stop-opacity=".9"/>
-              <stop offset="30%"  stop-color="#D9C9AE" stop-opacity=".7"/>
-              <stop offset="100%" stop-color="#C4AD8F" stop-opacity="1"/>
-            </linearGradient>
-            <linearGradient id="sandSurfaceBot" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%"   stop-color="#BBA07A"/>
-              <stop offset="40%"  stop-color="#C8B591"/>
-              <stop offset="100%" stop-color="#DDD0B0" stop-opacity=".85"/>
-            </linearGradient>
+  <div class="done-text">
+    <p class="done-title">차 우리기 완성</p>
+    <p class="done-sub">잔에 나눠 담아 향을 즐겨보세요</p>
+  </div>
+  <button class="restart-btn" onclick="restart()" aria-label="다시 시작">
+    <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+      <polyline points="21 3 21 9 15 9"/></svg>
+  </button>
+</div>
 
-            <filter id="sandBlur">
-              <feGaussianBlur stdDeviation=".6"/>
-            </filter>
-          </defs>
+<script>
+(function(){
+  var TOP_Y=26,NECK_TOP=254,BOT_NECK=266,BOT_Y=494,TOTAL=180;
 
-          <!-- ══ 회전 루트 (뒤집기 시 전체가 돌아감) ══ -->
-          <g id="glassRoot">
+  var widget    =document.getElementById('widget');
+  var topSand   =document.getElementById('topSand');
+  var topHL     =document.getElementById('topSandHL');
+  var botSand   =document.getElementById('botSand');
+  var botHL     =document.getElementById('botSandHL');
+  var readout   =document.getElementById('readout');
+  var hgRoot    =document.getElementById('hgRoot');
+  var grainGrp  =document.getElementById('grainGroup');
+  var spreadGrp =document.getElementById('spreadGroup');
+  var doneScreen=document.getElementById('doneScreen');
 
-            <!-- 위쪽 유리 바디 -->
-            <!-- #FAF8F5: 페이지 배경(morrac-bg)과 동일 → 유리 내부가 배경에 자연스럽게 녹아들음 -->
-            <path id="topBody"
-              d="M53,52 Q53,52 130,52 Q207,52 207,52
-                 Q185,115 147,182 Q140,194 130,200
-                 Q120,194 113,182 Q75,115 53,52 Z"
-              fill="#FAF8F5" fill-opacity=".92"/>
-            <path
-              d="M53,52 Q53,52 130,52 Q207,52 207,52
-                 Q185,115 147,182 Q140,194 130,200
-                 Q120,194 113,182 Q75,115 53,52 Z"
-              fill="url(#glassFillTop)"/>
+  var startTime=null,rafId=null,lastSec=-1;
 
-            <!-- 위쪽 모래 -->
-            <rect id="topSand"
-              x="40" y="52" width="180" height="148"
-              fill="url(#sandGradTop)"
-              clip-path="url(#clipTop)"
-              filter="url(#sandBlur)"/>
-            <rect id="topSandHL"
-              x="40" y="52" width="180" height="6"
-              fill="url(#sandSurfaceTop)"
-              clip-path="url(#clipTop)"
-              opacity=".7"/>
+  function fmt(s){
+    s=Math.max(0,s);
+    return String(Math.floor(s/60)).padStart(2,'0')+':'+
+           String(Math.floor(s%60)).padStart(2,'0');
+  }
 
-            <!-- 위쪽 유리 테두리 (모래 위에 그려 덮음) -->
-            <path
-              d="M53,52 Q53,52 130,52 Q207,52 207,52
-                 Q185,115 147,182 Q140,194 130,200
-                 Q120,194 113,182 Q75,115 53,52 Z"
-              fill="url(#glassHL)" opacity=".8"/>
-            <path
-              d="M53,52 Q53,52 130,52 Q207,52 207,52
-                 Q185,115 147,182 Q140,194 130,200
-                 Q120,194 113,182 Q75,115 53,52 Z"
-              fill="none"
-              stroke="url(#glassStroke)" stroke-width="2.2"
-              stroke-linejoin="round"/>
+  function render(elapsed){
+    var frac=Math.min(elapsed/TOTAL,1);
+    var tH=Math.max((NECK_TOP-TOP_Y)*(1-frac),0),tY=NECK_TOP-tH;
+    topSand.setAttribute('y',tY);topSand.setAttribute('height',tH);topHL.setAttribute('y',tY);
+    var bH=Math.max((BOT_Y-BOT_NECK)*frac,0),bY=BOT_Y-bH;
+    botSand.setAttribute('y',bY);botSand.setAttribute('height',bH);botHL.setAttribute('y',bY);
+    var gi=Math.max(0,1-frac*1.05);
+    grainGrp.style.opacity=gi;spreadGrp.style.opacity=gi;
+    var rem=Math.max(TOTAL-elapsed,0),cs=Math.ceil(rem);
+    if(cs!==lastSec){readout.textContent=fmt(rem);lastSec=cs;}
+    if(frac>=1) finish();
+  }
 
-            <!-- 목(neck) -->
-            <rect x="113" y="200" width="34" height="28" fill="#FAF8F5" rx="2"/>
-            <rect x="118" y="200" width="24" height="28"
-                  fill="none" stroke="url(#glassStroke)" stroke-width="1.8" rx="1"/>
-            <rect x="119" y="200" width="5"  height="28"
-                  fill="#fff" fill-opacity=".2" rx="1"/>
+  function tick(now){
+    var el=(now-startTime)/1000;
+    if(el>=TOTAL){render(TOTAL);return;}
+    render(el);rafId=requestAnimationFrame(tick);
+  }
 
-            <!-- 아래쪽 유리 바디 -->
-            <path id="botBody"
-              d="M113,228 Q121,222 130,220 Q139,222 147,228
-                 Q170,290 207,378 Q130,378 53,378
-                 Q90,290 113,228 Z"
-              fill="#FAF8F5" fill-opacity=".92"/>
-            <path
-              d="M113,228 Q121,222 130,220 Q139,222 147,228
-                 Q170,290 207,378 Q130,378 53,378
-                 Q90,290 113,228 Z"
-              fill="url(#glassFillBot)"/>
+  function start(){
+    widget.dataset.state='running';
+    if(rafId)cancelAnimationFrame(rafId);
+    startTime=performance.now();lastSec=-1;
+    rafId=requestAnimationFrame(tick);
+  }
 
-            <!-- 아래쪽 모래 -->
-            <rect id="botSand"
-              x="40" y="378" width="180" height="0"
-              fill="url(#sandGradBot)"
-              clip-path="url(#clipBot)"
-              filter="url(#sandBlur)"/>
-            <rect id="botSandHL"
-              x="40" y="370" width="180" height="6"
-              fill="url(#sandSurfaceBot)"
-              clip-path="url(#clipBot)"
-              opacity=".65"/>
+  function finish(){
+    widget.dataset.state='done';
+    setTimeout(function(){doneScreen.classList.add('active');},400);
+  }
 
-            <!-- 아래쪽 유리 테두리 -->
-            <path
-              d="M113,228 Q121,222 130,220 Q139,222 147,228
-                 Q170,290 207,378 Q130,378 53,378
-                 Q90,290 113,228 Z"
-              fill="url(#glassHL)" opacity=".7"/>
-            <path
-              d="M113,228 Q121,222 130,220 Q139,222 147,228
-                 Q170,290 207,378 Q130,378 53,378
-                 Q90,290 113,228 Z"
-              fill="none"
-              stroke="url(#glassStroke)" stroke-width="2.2"
-              stroke-linejoin="round"/>
+  window.restart=function(){
+    doneScreen.classList.remove('active');
+    setTimeout(function(){render(0);start();},600);
+  };
 
-            <!-- 유리 반사 하이라이트 -->
-            <path d="M66,80 Q60,130 72,175"
-              fill="none" stroke="#fff" stroke-width="4"
-              stroke-linecap="round" opacity=".3"/>
-            <path d="M68,255 Q58,305 68,355"
-              fill="none" stroke="#fff" stroke-width="4"
-              stroke-linecap="round" opacity=".25"/>
+  window.doFlip=function(){
+    if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+    if(window.matchMedia('(prefers-reduced-motion:reduce)').matches){start();return;}
+    hgRoot.classList.remove('spin');void hgRoot.offsetWidth;
+    hgRoot.classList.add('spin');
+    hgRoot.addEventListener('animationend',function h(){
+      hgRoot.removeEventListener('animationend',h);
+      hgRoot.classList.remove('spin');start();
+    });
+  };
 
-            <!-- 1분 30초(50%) 표시점 -->
-            <circle cx="79"  cy="126" r="2.8" fill="#B96A4A" opacity=".8"/>
-            <circle cx="181" cy="126" r="2.8" fill="#B96A4A" opacity=".8"/>
-            <circle cx="79"  cy="303" r="2.8" fill="#B96A4A" opacity=".8"/>
-            <circle cx="181" cy="303" r="2.8" fill="#B96A4A" opacity=".8"/>
-
-            <!-- 떨어지는 모래 흐름 -->
-            <g clip-path="url(#clipNeck)">
-              <ellipse class="grain" cx="130" cy="204" rx="2.2" ry="2.8"
-                fill="#C8B591" style="--dur:.38s;--drop:20px;animation-delay:0s"/>
-              <ellipse class="grain" cx="129" cy="202" rx="1.6" ry="2.2"
-                fill="#DACC9F" style="--dur:.42s;--drop:22px;animation-delay:.12s"/>
-              <ellipse class="grain" cx="131" cy="205" rx="1.4" ry="1.8"
-                fill="#BBA07A" style="--dur:.36s;--drop:19px;animation-delay:.24s"/>
-            </g>
-
-            <!-- 목 아래 퍼지는 먼지 입자 -->
-            <circle class="dust" cx="130" cy="228" r="1.2" fill="#C8B591"
-              style="--ddur:.55s;--ddelay:.05s;--dx:-4px;--dy:14px"/>
-            <circle class="dust" cx="130" cy="228" r="1.0" fill="#D9C8A0"
-              style="--ddur:.6s;--ddelay:.18s;--dx:5px;--dy:12px"/>
-            <circle class="dust" cx="130" cy="228" r=".9"  fill="#BBA07A"
-              style="--ddur:.5s;--ddelay:.32s;--dx:-6px;--dy:16px"/>
-            <circle class="dust" cx="130" cy="228" r=".8"  fill="#C4AF88"
-              style="--ddur:.65s;--ddelay:.08s;--dx:7px;--dy:10px"/>
-            <circle class="dust" cx="130" cy="228" r="1.1" fill="#D0BF9A"
-              style="--ddur:.48s;--ddelay:.41s;--dx:-2px;--dy:18px"/>
-            <circle class="dust" cx="130" cy="228" r=".7"  fill="#BBA07A"
-              style="--ddur:.57s;--ddelay:.55s;--dx:3px;--dy:15px"/>
-
-            <!-- 위쪽 캡 -->
-            <rect x="38" y="36" width="184" height="18" rx="9" fill="url(#capGrad)"/>
-            <rect x="42" y="37" width="80"  height="6"  rx="3" fill="#fff" fill-opacity=".18"/>
-
-            <!-- 아래쪽 캡 -->
-            <rect x="38" y="376" width="184" height="18" rx="9" fill="url(#capGrad)"/>
-            <rect x="42" y="377" width="80"  height="6"  rx="3" fill="#fff" fill-opacity=".18"/>
-
-            <!-- 좌우 기둥 -->
-            <rect x="36"  y="52" width="8" height="328" rx="4" fill="url(#capGrad)"/>
-            <rect x="216" y="52" width="8" height="328" rx="4" fill="url(#capGrad)"/>
-            <rect x="37"  y="60" width="3" height="310" rx="1.5" fill="#fff" fill-opacity=".18"/>
-            <rect x="217" y="60" width="3" height="310" rx="1.5" fill="#fff" fill-opacity=".18"/>
-
-          </g><!-- /glassRoot -->
-        </svg>
-      </div>
-
-      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-        <div class="readout" id="readout">03:00</div>
-        <button class="flip-btn" id="flipBtn" aria-label="모래시계 뒤집기" onclick="doFlip()">
-          <svg viewBox="0 0 24 24">
-            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
-            <polyline points="21 3 21 9 15 9"/>
-          </svg>
-        </button>
-      </div>
-
-    </div><!-- /widget -->
-  </main>
-
-  <script src="main.js" defer></script>
+  start();
+})();
+</script>
 </body>
 </html>
